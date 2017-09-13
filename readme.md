@@ -40,7 +40,7 @@ After scaffolding this package is unnecessary dependency
 composer remove masterro/laravel-scaffold
 ```
 
-######For Laravel < 5.5 
+##### For Laravel < 5.5 
 Open `config/app.php` and remove the provider:
 
 ```
