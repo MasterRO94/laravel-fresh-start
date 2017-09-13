@@ -1,0 +1,32 @@
+{
+    "name": "masterro/laravel-scaffold",
+    "description": "Quickly scaffold the laravel app for further developing",
+    "keywords": ["laravel", "scaffold", "get-up"],
+    "authors": [
+        {
+            "name": "Roman Ihoshyn",
+            "email": "igoshin18@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.5.9",
+        "illuminate/console": "^5.2,<5.6",
+        "symfony/process": "^3.3",
+        "illuminate/filesystem": "^5.2,<5.6",
+        "illuminate/support": "^5.2,<5.6"
+    },
+    "autoload": {
+        "psr-4": {
+            "MasterRO\\LaravelScaffold\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "MasterRO\\LaravelScaffold\\Providers\\ScaffoldServiceProvider"
+            ]
+        }
+    },
+    "license": "MIT",
+    "minimum-stability": "dev"
+}
