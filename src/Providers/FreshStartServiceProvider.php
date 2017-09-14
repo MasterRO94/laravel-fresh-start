@@ -1,11 +1,11 @@
 <?php
 
-namespace MasterRO\LaravelScaffold\Providers;
+namespace MasterRO\LaravelFreshStart\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use MasterRO\LaravelScaffold\Console\Commands\ScaffoldTheApp;
+use MasterRO\LaravelFreshStart\Console\Commands\FreshStartCommand;
 
-class ScaffoldServiceProvider extends ServiceProvider
+class FreshStartServiceProvider extends ServiceProvider
 {
 	/**
 	 * Bootstrap the application services.
@@ -15,7 +15,7 @@ class ScaffoldServiceProvider extends ServiceProvider
 	public function boot()
 	{
 		$this->commands([
-			ScaffoldTheApp::class,
+			FreshStartCommand::class,
 		]);
 	}
 

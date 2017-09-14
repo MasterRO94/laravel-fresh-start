@@ -16,7 +16,7 @@ class FreshStartCommand extends Command
 	 *
 	 * @var string
 	 */
-	protected $signature = 'app:fresh-start';
+	protected $signature = 'app:fresh-start {--abstract-model=Model} {--models-directory-name=Models} {--composer=composer} {--without-auth}';
 
 	/**
 	 * The console command description.
@@ -28,17 +28,22 @@ class FreshStartCommand extends Command
 	/**
 	 * @var string
 	 */
-	protected $composerCmd = 'composer';
+	protected $composerCmd;
 
 	/**
 	 * @var string
 	 */
-	protected $modelsDirectoryName = 'Models';
+	protected $modelsDirectoryName;
 
 	/**
 	 * @var string
 	 */
-	protected $abstractModelName = 'Model';
+	protected $abstractModelName;
+
+	/**
+	 * @var boolean
+	 */
+	protected $makeAuth;
 
 	/**
 	 * @var Filesystem
@@ -68,10 +73,24 @@ class FreshStartCommand extends Command
 
 
 	/**
+	 * Set properties from options
+	 */
+	protected function setUp()
+	{
+		$this->abstractModelName = $this->option('abstract-model');
+		$this->modelsDirectoryName = $this->option('models-directory');
+		$this->composerCmd = $this->option('composer');
+		$this->makeAuth = ! $this->option('without-auth');
+	}
+
+
+	/**
 	 * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
 	 */
 	public function handle()
 	{
+		$this->setUp();
+
 		$this->createModelsDirectory();
 		$this->createAbstractModel();
 		$this->moveUserToModelsDirectory();
@@ -82,7 +101,10 @@ class FreshStartCommand extends Command
 		$this->registerIdeHelperAndDebugbar();
 		$this->addIdeHelperCommandToComposerJson();
 		$this->composerDumpAutoload();
-		$this->makeAuth();
+
+		if ($this->makeAuth) {
+			$this->makeAuth();
+		}
 	}
 
 
