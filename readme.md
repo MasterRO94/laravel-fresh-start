@@ -14,7 +14,7 @@ LaravelFileCleaner is a package for Laravel 5 that provides deleting temp files 
 From the command line, run:
 
 ```
-composer require masterro/laravel-scaffold --dev
+composer require masterro/laravel-fresh-start --dev
 ```
 
 ### Step 2: Service Provider (For Laravel < 5.5)
@@ -22,14 +22,14 @@ composer require masterro/laravel-scaffold --dev
 For your Laravel app, open `config/app.php` and, within the `providers` array, append:
 
 ```
-MasterRO\LaravelScaffold\ScaffoldServiceProvider::class
+MasterRO\LaravelFreshStart\FreshStartServiceProvider::class
 ```
 
 ### Step 3: Run the scaffold
 From the command line, run:
 
 ```
-php artisan app:scaffold
+php artisan app:fresh-start
 ```
 
 
@@ -37,14 +37,14 @@ php artisan app:scaffold
 After scaffolding this package is unnecessary dependency 
 
 ```
-composer remove masterro/laravel-scaffold
+composer remove masterro/laravel-fresh-start
 ```
 
 ##### For Laravel < 5.5 
 Open `config/app.php` and remove the provider:
 
 ```
-MasterRO\LaravelScaffold\ScaffoldServiceProvider::class
+MasterRO\LaravelFreshStart\FreshStartServiceProvider::class
 ```
 
 #### _I will be grateful if you star this project :)_

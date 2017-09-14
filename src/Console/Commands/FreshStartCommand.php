@@ -1,22 +1,22 @@
 <?php
 
-namespace MasterRO\LaravelScaffold\Console\Commands;
+namespace MasterRO\LaravelFreshStart\Console\Commands;
 
-use Illuminate\Support\Facades\Artisan;
 use stdClass;
 use Illuminate\Console\Command;
 use Symfony\Component\Finder\Finder;
 use Illuminate\Filesystem\Filesystem;
 use Symfony\Component\Process\Process;
+use Illuminate\Support\Facades\Artisan;
 
-class ScaffoldTheApp extends Command
+class FreshStartCommand extends Command
 {
 	/**
 	 * The name and signature of the console command.
 	 *
 	 * @var string
 	 */
-	protected $signature = 'app:scaffold';
+	protected $signature = 'app:fresh-start';
 
 	/**
 	 * The console command description.

@@ -1,7 +1,7 @@
 {
-    "name": "masterro/laravel-scaffold",
+    "name": "masterro/laravel-fresh-start",
     "description": "Quickly scaffold the laravel app for further developing",
-    "keywords": ["laravel", "scaffold", "get-up"],
+    "keywords": ["laravel", "scaffold", "fresh", "get-up"],
     "authors": [
         {
             "name": "Roman Ihoshyn",
@@ -17,13 +17,13 @@
     },
     "autoload": {
         "psr-4": {
-            "MasterRO\\LaravelScaffold\\": "src/"
+            "MasterRO\\LaravelFreshStart\\": "src/"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "MasterRO\\LaravelScaffold\\Providers\\ScaffoldServiceProvider"
+                "MasterRO\\LaravelFreshStart\\Providers\\FreshStartServiceProvider"
             ]
         }
     },
