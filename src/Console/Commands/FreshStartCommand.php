@@ -16,7 +16,7 @@ class FreshStartCommand extends Command
 	 *
 	 * @var string
 	 */
-	protected $signature = 'app:fresh-start {--abstract-model=Model} {--models-directory-name=Models} {--composer=composer} {--without-auth}';
+	protected $signature = 'app:fresh-start {--abstract-model=Model} {--models-directory=Models} {--composer=composer} {--without-auth}';
 
 	/**
 	 * The console command description.
