@@ -6,5 +6,5 @@ use Illuminate\Database\Eloquent\Model as Eloquent;
 
 abstract class {AbstractModelName} extends Eloquent
 {
-    protected $guards = ['id'];
+    protected $guarded = ['id'];
 }
