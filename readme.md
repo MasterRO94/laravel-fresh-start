@@ -2,10 +2,14 @@
     <img src="https://laravel.com/assets/img/components/logo-laravel.svg">
 </p>
 
-# Laravel Get Up
+# Laravel Fresh Start
 ### Quickly scaffold base application structure
 
-LaravelFileCleaner is a package for Laravel 5 that provides deleting temp files and associated model instances(if needed).
+This package provides you an artisan command that creates a App/Models directory and moves App/User.php there. 
+Then it creates an abstract Model class and extend App\Models\User from abstract App\Models\Model.
+After that it requires ide-helper and debugbar and requires it in the AppServiceProvider for local env and adds to dont-discover in `composer.json`.
+Also it adds a `php artisan ide-helper:generate` command to `composer.json` post-install-cmd and post-update-cmd.
+
 
 ## Installation
 
