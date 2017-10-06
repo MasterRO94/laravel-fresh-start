@@ -36,9 +36,14 @@ From the command line, run:
 php artisan app:fresh-start
 ```
 
+You will be asked some questions to configure scaffolding. If you want to skip configuration yot can run command with `--default option`
+
+```
+php artisan app:fresh-start --default
+```
 
 ### Step 4: Remove the package
-After scaffolding this package is unnecessary dependency 
+If you answered "no" on "Remove this package?" question after scaffolding you can remove 
 
 ```
 composer remove masterro/laravel-fresh-start

@@ -11,12 +11,14 @@ use Illuminate\Support\Facades\Artisan;
 
 class FreshStartCommand extends Command
 {
+	const PACKAGE_NAME = 'masterro/laravel-fresh-start';
+
 	/**
 	 * The name and signature of the console command.
 	 *
 	 * @var string
 	 */
-	protected $signature = 'app:fresh-start {--abstract-model=Model} {--models-directory=Models} {--composer=composer} {--without-auth}';
+	protected $signature = 'app:fresh-start {--default}';
 
 	/**
 	 * The console command description.
@@ -28,22 +30,27 @@ class FreshStartCommand extends Command
 	/**
 	 * @var string
 	 */
-	protected $composerCmd;
+	protected $composerCmd = 'composer';
 
 	/**
 	 * @var string
 	 */
-	protected $modelsDirectoryName;
+	protected $modelsDirectoryName = 'Models';
 
 	/**
 	 * @var string
 	 */
-	protected $abstractModelName;
+	protected $abstractModelName = 'Model';
 
 	/**
 	 * @var boolean
 	 */
-	protected $makeAuth;
+	protected $makeAuth = true;
+
+	/**
+	 * @var boolean
+	 */
+	protected $remove = true;
 
 	/**
 	 * @var Filesystem
@@ -57,6 +64,11 @@ class FreshStartCommand extends Command
 		'barryvdh/laravel-debugbar',
 		'barryvdh/laravel-ide-helper',
 	];
+
+	/**
+	 * @var array
+	 */
+	protected $packagesToInstall = [];
 
 
 	/**
@@ -77,10 +89,24 @@ class FreshStartCommand extends Command
 	 */
 	protected function setUp()
 	{
-		$this->abstractModelName = $this->option('abstract-model');
-		$this->modelsDirectoryName = $this->option('models-directory');
-		$this->composerCmd = $this->option('composer');
-		$this->makeAuth = ! $this->option('without-auth');
+		if ($this->option('default')) {
+			$this->packagesToInstall = $this->barryvdhPackages;
+
+			return;
+		}
+
+		$this->modelsDirectoryName = $this->ask('Name of models directory', 'Models');
+		$this->abstractModelName = $this->ask('Name of the abstract Eloquent model', 'Model');
+		$this->composerCmd = $this->ask('Composer command (php composer.phar, composer)', 'composer');
+
+		foreach ($this->barryvdhPackages as $package) {
+			if ($this->ask("Install {$package}? [yes, no]", 'yes') == 'yes') {
+				$this->packagesToInstall[] = $package;
+			}
+		}
+
+		$this->makeAuth = $this->ask('Run `php artisan make:auth`? [yes, no]', 'yes') == 'yes';
+		$this->remove = $this->ask('Remove this package after installation? [yes, no]', 'yes') == 'yes';
 	}
 
 
@@ -96,24 +122,35 @@ class FreshStartCommand extends Command
 		$this->moveUserToModelsDirectory();
 		$this->changeUserNamespaceEverywhereItUses();
 		$this->extendUserFromAbstractModel();
-		$this->addIdeHelperAndDebugbarToDontDiscover();
-		$this->requireIdeHelperAndDebugbar();
-		$this->registerIdeHelperAndDebugbar();
-		$this->addIdeHelperCommandToComposerJson();
-		$this->composerDumpAutoload();
+
+		if (count($this->packagesToInstall)) {
+			$this->addIdeHelperAndDebugbarToDontDiscover();
+			$this->requireIdeHelperAndDebugbar();
+			$this->registerIdeHelperAndDebugbar();
+
+			if (in_array('barryvdh/laravel-ide-helper', $this->packagesToInstall)) {
+				$this->addIdeHelperCommandToComposerJson();
+			}
+		}
 
 		if ($this->makeAuth) {
 			$this->makeAuth();
 		}
+
+		if ($this->remove) {
+			$this->selfRemove();
+		}
+
+		$this->composerUpdate();
 	}
 
 
 	protected function requireIdeHelperAndDebugbar()
 	{
-		$this->info('.........Requiring IdeHelper and Debugbar');
+		$this->info('.........Requiring ' . implode(' and ', $this->packagesToInstall));
 
-		foreach ($this->barryvdhPackages as $package) {
-			$process = new Process("{$this->composerCmd} require {$package}");
+		foreach ($this->packagesToInstall as $package) {
+			$process = new Process("{$this->composerCmd} require {$package} --dev --no-suggest");
 
 			$process->run(function ($type, $buffer) {
 				$this->getOutput()->write('> ' . $buffer);
@@ -125,7 +162,7 @@ class FreshStartCommand extends Command
 	/**
 	 * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
 	 */
-	protected function addIdeHelperCommandToComposerJson()
+	protected function addIdeHelperAndDebugbarToDontDiscover()
 	{
 		$composerJson = $this->filesystem->get('composer.json');
 
@@ -140,7 +177,7 @@ class FreshStartCommand extends Command
 		}
 
 		$dontDiscover = collect($composerData->extra->laravel->{'dont-discover'} ?? [])
-			->merge($this->barryvdhPackages)
+			->merge($this->packagesToInstall)
 			->unique();
 
 		$composerData->extra->laravel->{'dont-discover'} = $dontDiscover;
@@ -155,7 +192,7 @@ class FreshStartCommand extends Command
 	/**
 	 * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
 	 */
-	protected function addIdeHelperAndDebugbarToDontDiscover()
+	protected function addIdeHelperCommandToComposerJson()
 	{
 		$composerJson = $this->filesystem->get('composer.json');
 
@@ -277,23 +314,17 @@ class FreshStartCommand extends Command
 	 */
 	protected function registerIdeHelperAndDebugbar()
 	{
-		$this->info('.........Registering IdeHelper and Debugbar in AppServiceProvider');
+		$this->info('.........Registering ' . implode(' and ', $this->packagesToInstall) . ' in AppServiceProvider');
 
-		$stub = $this->filesystem->get(__DIR__ . '/../stubs/app_provider.stub');
+		if (count($this->packagesToInstall) > 1) {
+			$stub = $this->filesystem->get(__DIR__ . '/../stubs/app_provider.stub');
+		} else {
+			$stubSuffix = snake_case(str_replace('-', '_', explode('/', $this->packagesToInstall[0])[1]));
+
+			$stub = $this->filesystem->get(__DIR__ . "/../stubs/app_provider_{$stubSuffix}.stub");
+		}
 
 		$this->filesystem->put(app_path('Providers') . "/AppServiceProvider.php", $stub);
-	}
-
-
-	protected function composerDumpAutoload()
-	{
-		$this->info(".........Running \"{$this->composerCmd} dump-autoload\"");
-
-		$process = new Process("{$this->composerCmd} dump-autoload");
-
-		$process->run(function ($type, $buffer) {
-			$this->getOutput()->write('> ' . $buffer);
-		});
 	}
 
 
@@ -301,9 +332,42 @@ class FreshStartCommand extends Command
 	{
 		$this->info(".........Running 'php artisan make:auth'");
 
-		Artisan::call('php artisan make:auth');
+		Artisan::call('make:auth');
 
 		$this->getOutput()->writeln(Artisan::output());
+	}
+
+
+	protected function selfRemove()
+	{
+		$this->info('.........Removing ' . static::PACKAGE_NAME);
+
+		$composerJson = $this->filesystem->get('composer.json');
+
+		$composerData = json_decode($composerJson);
+
+		if (data_get($composerData, 'require.masterro/laravel-fresh-start')) {
+			unset($composerData->require->{"masterro/laravel-fresh-start"});
+		} elseif (data_get($composerData, 'require-dev.masterro/laravel-fresh-start')) {
+			unset($composerData->{"require-dev"}->{"masterro/laravel-fresh-start"});
+		}
+
+		$this->filesystem->put(
+			'composer.json',
+			strtr(json_encode($composerData, JSON_PRETTY_PRINT), ['\/' => '/'])
+		);
+	}
+
+
+	protected function composerUpdate()
+	{
+		$this->info(".........Running \"{$this->composerCmd} update\"");
+
+		$process = new Process("{$this->composerCmd} update");
+
+		$process->run(function ($type, $buffer) {
+			$this->getOutput()->write('> ' . $buffer);
+		});
 	}
 
 }
