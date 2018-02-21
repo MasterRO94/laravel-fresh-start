@@ -30,7 +30,7 @@ class User extends {AbstractModelName} implements AuthenticatableContract, Autho
 	 *
 	 * @return \Illuminate\Database\Eloquent\Model|null|static
 	 */
-	public static function findByEmail(string $email): ?User
+	public static function findByEmail($email)
 	{
 		return static::where(compact('email'))->first();
 	}

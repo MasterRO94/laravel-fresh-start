@@ -150,7 +150,7 @@ class FreshStartCommand extends Command
 		$this->info('.........Requiring ' . implode(' and ', $this->packagesToInstall));
 
 		foreach ($this->packagesToInstall as $package) {
-			$process = new Process("{$this->composerCmd} require {$package} --dev --no-suggest");
+			$process = new Process("{$this->composerCmd} require {$package} --dev");
 
 			$process->run(function ($type, $buffer) {
 				$this->getOutput()->write('> ' . $buffer);
