@@ -70,7 +70,6 @@ class FreshStartCommand extends Command
 	 */
 	protected $packagesToInstall = [];
 
-
 	/**
 	 * GetUpTheApp constructor.
 	 *
@@ -83,16 +82,17 @@ class FreshStartCommand extends Command
 		$this->filesystem = $filesystem;
 	}
 
-
 	/**
-	 * Set properties from options
+	 * Set Up
+	 *
+	 * @return $this
 	 */
 	protected function setUp()
 	{
 		if ($this->option('default')) {
 			$this->packagesToInstall = $this->barryvdhPackages;
 
-			return;
+			return $this;
 		}
 
 		$this->modelsDirectoryName = $this->ask('Name of models directory', 'Models');
@@ -107,26 +107,29 @@ class FreshStartCommand extends Command
 
 		$this->makeAuth = $this->ask('Run `php artisan make:auth`? [yes, no]', 'yes') == 'yes';
 		$this->remove = $this->ask('Remove this package after installation? [yes, no]', 'yes') == 'yes';
+
+		return $this;
 	}
 
-
 	/**
+	 * Handle
+	 *
 	 * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
 	 */
 	public function handle()
 	{
 		$this->setUp();
 
-		$this->createModelsDirectory();
-		$this->createAbstractModel();
-		$this->moveUserToModelsDirectory();
-		$this->changeUserNamespaceEverywhereItUses();
-		$this->extendUserFromAbstractModel();
+		$this->createModelsDirectory()
+			->createAbstractModel()
+			->moveUserToModelsDirectory()
+			->changeUserNamespaceEverywhereItUses()
+			->extendUserFromAbstractModel();
 
 		if (count($this->packagesToInstall)) {
-			$this->addIdeHelperAndDebugbarToDontDiscover();
-			$this->requireIdeHelperAndDebugbar();
-			$this->registerIdeHelperAndDebugbar();
+			$this->addIdeHelperAndDebugbarToDontDiscover()
+				->requireIdeHelperAndDebugbar()
+				->registerIdeHelperAndDebugbar();
 
 			if (in_array('barryvdh/laravel-ide-helper', $this->packagesToInstall)) {
 				$this->addIdeHelperCommandToComposerJson();
@@ -144,7 +147,11 @@ class FreshStartCommand extends Command
 		$this->composerUpdate();
 	}
 
-
+	/**
+	 * Require Ide Helper And Debugbar
+	 *
+	 * @return $this
+	 */
 	protected function requireIdeHelperAndDebugbar()
 	{
 		$this->info('.........Requiring ' . implode(' and ', $this->packagesToInstall));
@@ -156,10 +163,14 @@ class FreshStartCommand extends Command
 				$this->getOutput()->write('> ' . $buffer);
 			});
 		}
+
+		return $this;
 	}
 
-
 	/**
+	 * Add Ide Helper And Debugbar To Dont Discover
+	 *
+	 * @return $this
 	 * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
 	 */
 	protected function addIdeHelperAndDebugbarToDontDiscover()
@@ -186,10 +197,14 @@ class FreshStartCommand extends Command
 			'composer.json',
 			strtr(json_encode($composerData, JSON_PRETTY_PRINT), ['\/' => '/'])
 		);
+
+		return $this;
 	}
 
-
 	/**
+	 * Add Ide Helper Command To Composer Json
+	 *
+	 * @return $this
 	 * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
 	 */
 	protected function addIdeHelperCommandToComposerJson()
@@ -216,9 +231,15 @@ class FreshStartCommand extends Command
 			'composer.json',
 			strtr(json_encode($composerData, JSON_PRETTY_PRINT), ['\/' => '/'])
 		);
+
+		return $this;
 	}
 
-
+	/**
+	 * Create Models Directory
+	 *
+	 * @return $this
+	 */
 	protected function createModelsDirectory()
 	{
 		$this->info(".........Creating models directory: {$this->modelsDirectoryName}");
@@ -228,10 +249,14 @@ class FreshStartCommand extends Command
 		if (! $this->filesystem->exists($path)) {
 			$this->filesystem->makeDirectory($path);
 		}
+
+		return $this;
 	}
 
-
 	/**
+	 * Create Abstract Model
+	 *
+	 * @return $this
 	 * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
 	 */
 	protected function createAbstractModel()
@@ -247,10 +272,14 @@ class FreshStartCommand extends Command
 				'{AbstractModelName}'   => $this->abstractModelName,
 			])
 		);
+
+		return $this;
 	}
 
-
 	/**
+	 * Move User To Models Directory
+	 *
+	 * @return $this
 	 * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
 	 */
 	protected function moveUserToModelsDirectory()
@@ -266,9 +295,16 @@ class FreshStartCommand extends Command
 				])
 			);
 		}
+
+		return $this;
 	}
 
-
+	/**
+	 * Change User Namespace Everywhere It Uses
+	 *
+	 * @return $this
+	 * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
+	 */
 	protected function changeUserNamespaceEverywhereItUses()
 	{
 		$this->info(".........Changing user uses and imports from App\\User to App\\{$this->modelsDirectoryName}\\User");
@@ -287,10 +323,14 @@ class FreshStartCommand extends Command
 				]));
 			}
 		}
+
+		return $this;
 	}
 
-
 	/**
+	 * Extend User From Abstract Model
+	 *
+	 * @return $this
 	 * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
 	 */
 	protected function extendUserFromAbstractModel()
@@ -306,10 +346,14 @@ class FreshStartCommand extends Command
 				'{AbstractModelName}'   => $this->abstractModelName,
 			])
 		);
+
+		return $this;
 	}
 
-
 	/**
+	 * Register Ide Helper And Debugbar
+	 *
+	 * @return $this
 	 * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
 	 */
 	protected function registerIdeHelperAndDebugbar()
@@ -325,9 +369,15 @@ class FreshStartCommand extends Command
 		}
 
 		$this->filesystem->put(app_path('Providers') . "/AppServiceProvider.php", $stub);
+
+		return $this;
 	}
 
-
+	/**
+	 * Make Auth
+	 *
+	 * @return $this
+	 */
 	protected function makeAuth()
 	{
 		$this->info(".........Running 'php artisan make:auth'");
@@ -335,9 +385,16 @@ class FreshStartCommand extends Command
 		Artisan::call('make:auth');
 
 		$this->getOutput()->writeln(Artisan::output());
+
+		return $this;
 	}
 
-
+	/**
+	 * Self Remove
+	 *
+	 * @return $this
+	 * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
+	 */
 	protected function selfRemove()
 	{
 		$this->info('.........Removing ' . static::PACKAGE_NAME);
@@ -356,9 +413,15 @@ class FreshStartCommand extends Command
 			'composer.json',
 			strtr(json_encode($composerData, JSON_PRETTY_PRINT), ['\/' => '/'])
 		);
+
+		return $this;
 	}
 
-
+	/**
+	 * Composer Update
+	 *
+	 * @return $this
+	 */
 	protected function composerUpdate()
 	{
 		$this->info(".........Running \"{$this->composerCmd} update\"");
@@ -368,6 +431,7 @@ class FreshStartCommand extends Command
 		$process->run(function ($type, $buffer) {
 			$this->getOutput()->write('> ' . $buffer);
 		});
-	}
 
+		return $this;
+	}
 }

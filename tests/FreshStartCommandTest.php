@@ -7,6 +7,9 @@ use MasterRO\LaravelFreshStart\Console\Commands\FreshStartCommand;
 
 class FreshStartCommandTest extends TestCase
 {
+	/**
+	 * Set Up
+	 */
 	public function setUp()
 	{
 		parent::setUp();
@@ -15,15 +18,4 @@ class FreshStartCommandTest extends TestCase
 
 		$this->app['Illuminate\Contracts\Console\Kernel']->registerCommand(app(FreshStartCommand::class));
 	}
-
-
-	/**
-	 * @param bool $force
-	 * @param array $params
-	 */
-	protected function call($force = true, array $params = [])
-	{
-		$this->artisan('app:fresh-start', $params);
-	}
-
 }
