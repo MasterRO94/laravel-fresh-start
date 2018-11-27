@@ -7,26 +7,25 @@ use MasterRO\LaravelFreshStart\Console\Commands\FreshStartCommand;
 
 class FreshStartServiceProvider extends ServiceProvider
 {
-	/**
-	 * Bootstrap the application services.
-	 *
-	 * @return void
-	 */
-	public function boot()
-	{
-		$this->commands([
-			FreshStartCommand::class,
-		]);
-	}
+    /**
+     * Bootstrap the application services.
+     *
+     * @return void
+     */
+    public function boot()
+    {
+        $this->commands([
+            FreshStartCommand::class,
+        ]);
+    }
 
-
-	/**
-	 * Register the application services.
-	 *
-	 * @return void
-	 */
-	public function register()
-	{
-		//
-	}
+    /**
+     * Register the application services.
+     *
+     * @return void
+     */
+    public function register()
+    {
+        //
+    }
 }
