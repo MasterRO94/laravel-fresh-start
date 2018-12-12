@@ -19,7 +19,6 @@ class FreshStartServiceProvider extends ServiceProvider
 		]);
 	}
 
-
 	/**
 	 * Register the application services.
 	 *

@@ -26,7 +26,7 @@ composer require masterro/laravel-fresh-start --dev
 For your Laravel app, open `config/app.php` and, within the `providers` array, append:
 
 ```
-MasterRO\LaravelFreshStart\FreshStartServiceProvider::class
+MasterRO\LaravelFreshStart\Providers\FreshStartServiceProvider::class
 ```
 
 ### Step 3: Run the scaffold

@@ -157,7 +157,7 @@ class FreshStartCommand extends Command
 		$this->info('.........Requiring ' . implode(' and ', $this->packagesToInstall));
 
 		foreach ($this->packagesToInstall as $package) {
-			$process = new Process("{$this->composerCmd} require {$package} --dev");
+			$process = new Process("{$this->composerCmd} require {$package} --dev", null, null, null, 3600);
 
 			$process->run(function ($type, $buffer) {
 				$this->getOutput()->write('> ' . $buffer);
@@ -426,7 +426,7 @@ class FreshStartCommand extends Command
 	{
 		$this->info(".........Running \"{$this->composerCmd} update\"");
 
-		$process = new Process("{$this->composerCmd} update");
+		$process = new Process("{$this->composerCmd} update", null, null, null, 3600);
 
 		$process->run(function ($type, $buffer) {
 			$this->getOutput()->write('> ' . $buffer);
