@@ -3,6 +3,7 @@
 namespace MasterRO\LaravelFreshStart\Console\Commands;
 
 use stdClass;
+use Illuminate\Support\Str;
 use Illuminate\Console\Command;
 use Symfony\Component\Finder\Finder;
 use Illuminate\Filesystem\Filesystem;
