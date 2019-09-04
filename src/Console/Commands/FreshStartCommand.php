@@ -363,7 +363,7 @@ class FreshStartCommand extends Command
 		if (count($this->packagesToInstall) > 1) {
 			$stub = $this->filesystem->get(__DIR__ . '/../stubs/app_provider.stub');
 		} else {
-			$stubSuffix = snake_case(str_replace('-', '_', explode('/', $this->packagesToInstall[0])[1]));
+			$stubSuffix = Str::snake(str_replace('-', '_', explode('/', $this->packagesToInstall[0])[1]));
 
 			$stub = $this->filesystem->get(__DIR__ . "/../stubs/app_provider_{$stubSuffix}.stub");
 		}
