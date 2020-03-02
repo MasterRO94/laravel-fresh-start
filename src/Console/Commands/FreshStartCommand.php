@@ -3,12 +3,12 @@
 namespace MasterRO\LaravelFreshStart\Console\Commands;
 
 use stdClass;
+use RuntimeException;
 use Illuminate\Support\Str;
 use Illuminate\Console\Command;
 use Symfony\Component\Finder\Finder;
 use Illuminate\Filesystem\Filesystem;
 use Symfony\Component\Process\Process;
-use Illuminate\Support\Facades\Artisan;
 
 class FreshStartCommand extends Command
 {
@@ -49,6 +49,11 @@ class FreshStartCommand extends Command
 	protected $makeAuth = true;
 
 	/**
+	 * @var null
+	 */
+	protected $frontendPreset = 'Vue';
+
+	/**
 	 * @var boolean
 	 */
 	protected $remove = true;
@@ -61,10 +66,12 @@ class FreshStartCommand extends Command
 	/**
 	 * @var array
 	 */
-	private $barryvdhPackages = [
+	private $additionalPackages = [
 		'barryvdh/laravel-debugbar',
 		'barryvdh/laravel-ide-helper',
 	];
+
+	protected $laravelUiPackage = 'laravel/ui';
 
 	/**
 	 * @var array
@@ -72,9 +79,14 @@ class FreshStartCommand extends Command
 	protected $packagesToInstall = [];
 
 	/**
+	 * @var array
+	 */
+	protected $packagesToRegister = [];
+
+	/**
 	 * GetUpTheApp constructor.
 	 *
-	 * @param Filesystem $filesystem
+	 * @param  Filesystem  $filesystem
 	 */
 	public function __construct(Filesystem $filesystem)
 	{
@@ -91,7 +103,7 @@ class FreshStartCommand extends Command
 	protected function setUp()
 	{
 		if ($this->option('default')) {
-			$this->packagesToInstall = $this->barryvdhPackages;
+			$this->packagesToInstall = array_merge($this->additionalPackages, [$this->laravelUiPackage]);
 
 			return $this;
 		}
@@ -100,13 +112,27 @@ class FreshStartCommand extends Command
 		$this->abstractModelName = $this->ask('Name of the abstract Eloquent model', 'Model');
 		$this->composerCmd = $this->ask('Composer command (php composer.phar, composer)', 'composer');
 
-		foreach ($this->barryvdhPackages as $package) {
+		foreach ($this->additionalPackages as $package) {
 			if ($this->ask("Install {$package}? [yes, no]", 'yes') == 'yes') {
 				$this->packagesToInstall[] = $package;
 			}
 		}
 
-		$this->makeAuth = $this->ask('Run `php artisan make:auth`? [yes, no]', 'yes') == 'yes';
+		$this->packagesToRegister = array_intersect($this->packagesToInstall, $this->additionalPackages);
+
+		$this->makeAuth = $this->ask('Do you want to scaffold auth? [yes, no]', 'yes') == 'yes';
+
+		$frontendPreset = $this->choice(
+			'What frontend preset do you want to scaffold?',
+			['None', 'Bootstrap', 'Vue', 'React'],
+			0
+		);
+		$this->frontendPreset = $frontendPreset !== 'None' ? $frontendPreset : null;
+
+		if ($this->makeAuth || $this->frontendPreset) {
+			$this->packagesToInstall[] = $this->laravelUiPackage;
+		}
+
 		$this->remove = $this->ask('Remove this package after installation? [yes, no]', 'yes') == 'yes';
 
 		return $this;
@@ -128,17 +154,17 @@ class FreshStartCommand extends Command
 			->extendUserFromAbstractModel();
 
 		if (count($this->packagesToInstall)) {
-			$this->addIdeHelperAndDebugbarToDontDiscover()
-				->requireIdeHelperAndDebugbar()
-				->registerIdeHelperAndDebugbar();
+			$this->addDeveloperPackagesToDontDiscover()
+				->requireAdditionalPackages()
+				->registerDevPackages();
 
 			if (in_array('barryvdh/laravel-ide-helper', $this->packagesToInstall)) {
 				$this->addIdeHelperCommandToComposerJson();
 			}
 		}
 
-		if ($this->makeAuth) {
-			$this->makeAuth();
+		if ($this->makeAuth || $this->frontendPreset) {
+			$this->scaffoldUi();
 		}
 
 		if ($this->remove) {
@@ -153,16 +179,12 @@ class FreshStartCommand extends Command
 	 *
 	 * @return $this
 	 */
-	protected function requireIdeHelperAndDebugbar()
+	protected function requireAdditionalPackages()
 	{
-		$this->info('.........Requiring ' . implode(' and ', $this->packagesToInstall));
+		$this->info('.........Requiring '.implode(' and ', $this->packagesToInstall));
 
 		foreach ($this->packagesToInstall as $package) {
-			$process = new Process("{$this->composerCmd} require {$package} --dev", null, null, null, 3600);
-
-			$process->run(function ($type, $buffer) {
-				$this->getOutput()->write('> ' . $buffer);
-			});
+			$this->runProcess("{$this->composerCmd} require {$package} --dev");
 		}
 
 		return $this;
@@ -174,7 +196,7 @@ class FreshStartCommand extends Command
 	 * @return $this
 	 * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
 	 */
-	protected function addIdeHelperAndDebugbarToDontDiscover()
+	protected function addDeveloperPackagesToDontDiscover()
 	{
 		$composerJson = $this->filesystem->get('composer.json');
 
@@ -189,7 +211,7 @@ class FreshStartCommand extends Command
 		}
 
 		$dontDiscover = collect($composerData->extra->laravel->{'dont-discover'} ?? [])
-			->merge($this->packagesToInstall)
+			->merge($this->packagesToRegister)
 			->unique();
 
 		$composerData->extra->laravel->{'dont-discover'} = $dontDiscover;
@@ -214,16 +236,10 @@ class FreshStartCommand extends Command
 
 		$composerData = json_decode($composerJson);
 
-		if (! isset($composerData->scripts->{'post-install-cmd'})) {
-			$composerData->scripts->{'post-install-cmd'} = [];
-		}
 		if (! isset($composerData->scripts->{'post-update-cmd'})) {
 			$composerData->scripts->{'post-update-cmd'} = [];
 		}
 
-		$composerData->scripts->{'post-install-cmd'} = collect($composerData->scripts->{'post-install-cmd'})
-			->merge(['php artisan ide-helper:generate'])
-			->unique();
 		$composerData->scripts->{'post-update-cmd'} = collect($composerData->scripts->{'post-update-cmd'})
 			->merge(['php artisan ide-helper:generate'])
 			->unique();
@@ -264,10 +280,10 @@ class FreshStartCommand extends Command
 	{
 		$this->info(".........Creating abstract model: {$this->abstractModelName}");
 
-		$stub = $this->filesystem->get(__DIR__ . '/../stubs/abstract_model.stub');
+		$stub = $this->filesystem->get(__DIR__.'/../stubs/abstract_model.stub');
 
 		$this->filesystem->put(
-			app_path($this->modelsDirectoryName) . "/{$this->abstractModelName}.php",
+			app_path($this->modelsDirectoryName)."/{$this->abstractModelName}.php",
 			strtr($stub, [
 				'{ModelsDirectoryName}' => $this->modelsDirectoryName,
 				'{AbstractModelName}'   => $this->abstractModelName,
@@ -338,10 +354,10 @@ class FreshStartCommand extends Command
 	{
 		$this->info(".........Extending user from App\\{$this->modelsDirectoryName}\\{$this->abstractModelName}");
 
-		$stub = $this->filesystem->get(__DIR__ . '/../stubs/user.stub');
+		$stub = $this->filesystem->get(__DIR__.'/../stubs/user.stub');
 
 		$this->filesystem->put(
-			app_path($this->modelsDirectoryName) . "/User.php",
+			app_path($this->modelsDirectoryName)."/User.php",
 			strtr($stub, [
 				'{ModelsDirectoryName}' => $this->modelsDirectoryName,
 				'{AbstractModelName}'   => $this->abstractModelName,
@@ -357,19 +373,27 @@ class FreshStartCommand extends Command
 	 * @return $this
 	 * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
 	 */
-	protected function registerIdeHelperAndDebugbar()
+	protected function registerDevPackages()
 	{
-		$this->info('.........Registering ' . implode(' and ', $this->packagesToInstall) . ' in AppServiceProvider');
-
-		if (count($this->packagesToInstall) > 1) {
-			$stub = $this->filesystem->get(__DIR__ . '/../stubs/app_provider.stub');
-		} else {
-			$stubSuffix = Str::snake(str_replace('-', '_', explode('/', $this->packagesToInstall[0])[1]));
-
-			$stub = $this->filesystem->get(__DIR__ . "/../stubs/app_provider_{$stubSuffix}.stub");
+		if (! count($this->packagesToRegister)) {
+			return $this;
 		}
 
-		$this->filesystem->put(app_path('Providers') . "/AppServiceProvider.php", $stub);
+		$this->info('.........Registering '.implode(' and ', $this->packagesToRegister).' in AppServiceProvider');
+
+		if (count($this->packagesToRegister) > 1) {
+			$stub = $this->filesystem->get(__DIR__.'/../stubs/app_provider.stub');
+		} else {
+			$stubSuffix = Str::snake(str_replace(
+				'-',
+				'_',
+				explode('/', $this->packagesToRegister[0])[1]
+			));
+
+			$stub = $this->filesystem->get(__DIR__."/../stubs/app_provider_{$stubSuffix}.stub");
+		}
+
+		$this->filesystem->put(app_path('Providers')."/AppServiceProvider.php", $stub);
 
 		return $this;
 	}
@@ -379,13 +403,23 @@ class FreshStartCommand extends Command
 	 *
 	 * @return $this
 	 */
-	protected function makeAuth()
+	protected function scaffoldUi()
 	{
-		$this->info(".........Running 'php artisan make:auth'");
+		$this->info(".........Scaffolding UI");
 
-		Artisan::call('make:auth');
+		$command = '';
 
-		$this->getOutput()->writeln(Artisan::output());
+		if ($this->frontendPreset && $this->makeAuth) {
+			$command = sprintf('php artisan ui %s --auth', strtolower($this->frontendPreset));
+		} elseif ($this->frontendPreset && ! $this->makeAuth) {
+			$command = sprintf('php artisan ui %s', strtolower($this->frontendPreset));
+		} elseif (! $this->frontendPreset && $this->makeAuth) {
+			$command = 'php artisan ui:auth';
+		}
+
+		if ($command) {
+			$this->runProcess($command);
+		}
 
 		return $this;
 	}
@@ -398,7 +432,7 @@ class FreshStartCommand extends Command
 	 */
 	protected function selfRemove()
 	{
-		$this->info('.........Removing ' . static::PACKAGE_NAME);
+		$this->info('.........Removing '.static::PACKAGE_NAME);
 
 		$composerJson = $this->filesystem->get('composer.json');
 
@@ -427,12 +461,26 @@ class FreshStartCommand extends Command
 	{
 		$this->info(".........Running \"{$this->composerCmd} update\"");
 
-		$process = new Process("{$this->composerCmd} update", null, null, null, 3600);
-
-		$process->run(function ($type, $buffer) {
-			$this->getOutput()->write('> ' . $buffer);
-		});
+		$this->runProcess("{$this->composerCmd} update");
 
 		return $this;
+	}
+
+	/**
+	 * Run Process
+	 *
+	 * @param  string  $command
+	 */
+	protected function runProcess(string $command)
+	{
+		$process = new Process(explode(' ', $command), null, null, null, 3600);
+
+		$process->run(function ($type, $buffer) {
+			$this->getOutput()->write('> '.$buffer);
+		});
+
+		if (! $process->isSuccessful()) {
+			throw new RuntimeException($process->getErrorOutput());
+		}
 	}
 }

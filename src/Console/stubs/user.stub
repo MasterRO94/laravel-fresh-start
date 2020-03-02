@@ -3,6 +3,7 @@
 namespace App\{ModelsDirectoryName};
 
 use Illuminate\Auth\Authenticatable;
+use Illuminate\Auth\MustVerifyEmail;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Auth\Passwords\CanResetPassword;
@@ -13,7 +14,7 @@ use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
 
 class User extends {AbstractModelName} implements AuthenticatableContract, AuthorizableContract, CanResetPasswordContract
 {
-	use Authenticatable, Authorizable, CanResetPassword, Notifiable;
+	use Authenticatable, Authorizable, CanResetPassword, Notifiable, MustVerifyEmail;
 
 	/**
 	 * The attributes that should be hidden for arrays.
